@@ -1,14 +1,17 @@
-# GameOfLife
+# Conway's Game of Life – Sequential and Parallel Benchmarks
 
-# Conway's Game of Life – Sequential Benchmark
+ARTI 503 – Parallel Architecture and Programming | Group 2 (9FA01)
 
-ARTI 503 – Parallel Architecture and Programming | Project Stage 1 | Group 2 (9FA01)
+This repository contains a C++ implementation of Conway's Game of Life used to study parallel performance on multi-core CPUs.
 
-This program runs Conway's Game of Life on large grids and measures its sequential (single-core) execution time. These results are the baseline for the parallel version in later stages.
+| File | Stage | Description |
+|---|---|---|
+| `GameOfLife.cpp` | Project Stage 1 | Sequential (single-core) version, used as the performance baseline |
+| `GameOfLife_Parallel.cpp` | Assignment 2 | OpenMP version with race condition and synchronization experiments |
 
 ## Requirements
 
-A C++ compiler (`g++`). To check, open a terminal and type:
+A C++ compiler (`g++`) with OpenMP support. To check, open a terminal and type:
 
 ```
 g++ --version
@@ -19,57 +22,50 @@ g++ --version
   winget install BrechtSanders.WinLibs.POSIX.UCRT
   ```
   Then close and reopen VS Code (or the terminal).
-- **Mac:** run `xcode-select --install` in the Terminal.
-
-## How to Run
-
-1. Download `GameOfLife.cpp` and open its folder in VS Code.
-2. Open a terminal: **Terminal → New Terminal**.
-3. Compile (use exactly this command so all results are comparable):
-   ```
-   g++ -O2 GameOfLife.cpp -o gol
-   ```
-4. Run:
-   - **Windows:** `.\gol.exe`
-   - **Mac / Linux:** `./gol`
-5. Wait until the program finishes (about 2–3 minutes). Do not stop it.
+- **Mac:** the default Apple compiler does not support OpenMP. Install GCC with Homebrew (`brew install gcc`) and use `g++-14` (or the version installed) instead of `g++`.
 
 ### Before running
 
 - Keep the laptop plugged in.
 - Set the power mode to **Best performance** (Windows: Settings → System → Power).
 - Close other heavy apps and pause OneDrive syncing.
+- Let the program finish without stopping it.
 
-## Output
+---
+
+## Stage 1: Sequential Version
+
+### How to Run
+
+Compile (use exactly this command so all results are comparable):
+
+```
+g++ -O2 GameOfLife.cpp -o gol
+```
+
+Run:
+- **Windows:** `.\gol.exe`
+- **Mac / Linux:** `./gol`
+
+The program takes about 2–3 minutes.
+
+### Output
 
 | Output | Meaning |
 |---|---|
 | Blinker test | Checks that the rules are implemented correctly |
-| Table 2 | Execution time for each grid size (3 runs + average) |
-| Table 3 | How the time is divided between neighbor counting and rule application |
-| Memory Access Experiment | Row-by-row vs. column-by-column traversal |
+| Execution time per grid size | Time for each grid size (3 runs + average) |
+| Time-consuming sections | How the time is divided between neighbor counting and rule application |
+| Memory access experiment | Row-by-row vs. column-by-column traversal |
 
-**For the report:** copy the **Average** column of Table 2 into your row in Table 4.
-
-## Settings
-
-The experiment settings are constants at the top of `GameOfLife.cpp`:
-
-| Setting | Value |
-|---|---|
-| Grid sizes | 500×500, 1000×1000, 2000×2000, 4000×4000 |
-| Generations | 100 |
-| Runs per grid size | 3 |
-| Initial live cells | 30% |
-| Random seed | 42 |
-
-Please do not change them, so that all team members' results can be compared.
+---
 
 ## Assignment 2: Parallel Version
 
-`GameOfLife_Parallel.cpp` contains the OpenMP experiments for race conditions and synchronization.
+### How to Run
 
 Compile (note the `-fopenmp` flag):
+
 ```
 g++ -O2 -fopenmp GameOfLife_Parallel.cpp -o gol_parallel
 ```
@@ -78,6 +74,48 @@ Run:
 - **Windows:** `.\gol_parallel.exe`
 - **Mac / Linux:** `./gol_parallel`
 
-The program runs two experiments:
-1. **Shared live-cell counter:** compares the race-condition version with critical, atomic, and reduction on 1, 2, 4, and 8 threads.
-2. **Grid update:** compares a single grid updated in place (race condition) with two grids (double buffering) on 1 to 24 threads.
+The program takes about 1–2 minutes.
+
+### Experiments
+
+**1. Shared live-cell counter**
+All threads add to the same counter. The program compares:
+
+| Version | Description |
+|---|---|
+| Race | No protection (race condition, incorrect results) |
+| Critical | `#pragma omp critical`: one thread at a time |
+| Atomic | `#pragma omp atomic`: indivisible hardware addition |
+| Reduction | `reduction(+:total)`: private copy per thread, combined at the end |
+
+Tested on 1, 2, 4, and 8 threads.
+
+**2. Grid update**
+The program compares two ways of computing each generation in parallel:
+
+| Version | Description |
+|---|---|
+| Single grid | One grid updated in place (race condition, incorrect results) |
+| Two grids | Read from one grid, write to another (double buffering, correct results) |
+
+Tested on 1, 2, 4, 8, 16, and 24 threads.
+
+### Output
+
+For each version and number of threads, the program prints the result of 3 runs, whether all results are correct, the average execution time, and the speed-up compared with the sequential version.
+
+---
+
+## Settings
+
+The experiment settings are constants at the top of each source file:
+
+| Setting | Value |
+|---|---|
+| Grid sizes | 500×500 to 4000×4000 (Stage 1), 4000×4000 (Assignment 2) |
+| Generations | 100 |
+| Runs per experiment | 3 |
+| Initial live cells | 30% |
+| Random seed | 42 (same starting grid in every run) |
+
+Please do not change them, so that all results can be compared.
