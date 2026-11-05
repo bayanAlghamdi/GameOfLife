@@ -64,3 +64,20 @@ The experiment settings are constants at the top of `GameOfLife.cpp`:
 | Random seed | 42 |
 
 Please do not change them, so that all team members' results can be compared.
+
+## Assignment 2: Parallel Version
+
+`GameOfLife_Parallel.cpp` contains the OpenMP experiments for race conditions and synchronization.
+
+Compile (note the `-fopenmp` flag):
+```
+g++ -O2 -fopenmp GameOfLife_Parallel.cpp -o gol_parallel
+```
+
+Run:
+- **Windows:** `.\gol_parallel.exe`
+- **Mac / Linux:** `./gol_parallel`
+
+The program runs two experiments:
+1. **Shared live-cell counter:** compares the race-condition version with critical, atomic, and reduction on 1, 2, 4, and 8 threads.
+2. **Grid update:** compares a single grid updated in place (race condition) with two grids (double buffering) on 1 to 24 threads.
